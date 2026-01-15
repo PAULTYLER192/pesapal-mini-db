@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesapal Mini Database</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗄️ Pesapal Mini Database</h1>
+            <p class="subtitle">A simple in-memory database with SQL-like query support</p>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="section">
+                    <h2>Tables</h2>
+                    <div id="tables-list" class="tables-list">
+                        <p class="loading">Loading tables...</p>
+                    </div>
+                    <button onclick="refreshTables()" class="btn btn-secondary">Refresh Tables</button>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="section">
+                    <h2>SQL Query</h2>
+                    <textarea id="query-input" placeholder="Enter SQL query here...&#10;Example: SELECT * FROM users"></textarea>
+                    <button onclick="executeQuery()" class="btn btn-primary">Execute Query</button>
+                </div>
+
+                <div class="section">
+                    <h2>Results</h2>
+                    <div id="results" class="results">
+                        <p class="placeholder">Execute a query to see results here</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Quick Examples</h2>
+                    <div class="examples">
+                        <button onclick="setQuery('CREATE TABLE users (id, name, email, age)')" class="btn-example">Create Table</button>
+                        <button onclick="setQuery('INSERT INTO users (id, name, email, age) VALUES (1, \\'John Doe\\', \\'john@example.com\\', 30)')" class="btn-example">Insert Data</button>
+                        <button onclick="setQuery('SELECT * FROM users')" class="btn-example">Select All</button>
+                        <button onclick="setQuery('SELECT name, email FROM users WHERE age > 25')" class="btn-example">Select with WHERE</button>
+                        <button onclick="setQuery('UPDATE users SET age = 31 WHERE id = 1')" class="btn-example">Update Data</button>
+                        <button onclick="setQuery('DELETE FROM users WHERE id = 1')" class="btn-example">Delete Data</button>
+                        <button onclick="setQuery('DROP TABLE users')" class="btn-example">Drop Table</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
