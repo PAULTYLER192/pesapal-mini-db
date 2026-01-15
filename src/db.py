@@ -37,7 +37,7 @@ class Database:
         if table_name in self.tables:
             raise ValueError(f"Table already exists: {table_name}")
         
-        if not columns or len(columns) == 0:
+        if not columns:
             raise ValueError("Table must have at least one column")
         
         table = Table(table_name, columns)

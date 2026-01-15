@@ -14,7 +14,9 @@ from src.parser import QueryParser
 
 app = Flask(__name__)
 # Secret key: use environment variable or generate a secure random key
-# In production, always set SECRET_KEY environment variable
+# Note: Random key generation means sessions are invalidated on app restart
+# For production, always set SECRET_KEY environment variable
+# For development with persistent sessions, set SECRET_KEY in environment
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_urlsafe(32))
 
 # Global database instance (in-memory)
@@ -42,7 +44,7 @@ def list_tables():
                 'row_count': table.count()
             })
         return jsonify({'success': True, 'tables': result})
-    except Exception as e:
+    except (ValueError, KeyError) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
 
@@ -115,7 +117,7 @@ def execute_query():
         else:
             return jsonify({'success': False, 'error': f"Unknown query type: {query_type}"}), 400
     
-    except Exception as e:
+    except (ValueError, KeyError, AttributeError) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
 
@@ -132,7 +134,7 @@ def get_table_data(table_name):
             'data': rows,
             'count': len(rows)
         })
-    except Exception as e:
+    except (ValueError, KeyError) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
 
