@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Database - Web Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .sql-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            min-height: 100px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .sql-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            min-height: 100px;
+        }
+
+        .result-container.hidden {
+            display: none;
+        }
+
+        .success-message {
+            color: #28a745;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .info-message {
+            color: #17a2b8;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .tables-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .table-badge {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .table-badge:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .help-section {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .help-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .help-section ul {
+            list-style-position: inside;
+            line-height: 1.8;
+        }
+
+        .help-section code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .schema-table {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ Mini Database</h1>
+            <p>SQL-based Mini Database with Web Interface</p>
+        </div>
+
+        <div class="content">
+            <!-- SQL Input Section -->
+            <div class="section">
+                <div class="section-title">SQL Command</div>
+                <textarea id="sqlInput" class="sql-input" placeholder="Enter SQL command here...
+Example: CREATE TABLE users (name TEXT, age INTEGER, email TEXT)"></textarea>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="executeSQL()">Execute</button>
+                    <button class="btn btn-secondary" onclick="clearInput()">Clear</button>
+                    <button class="btn btn-secondary" onclick="loadTables()">Refresh Tables</button>
+                    <button class="btn btn-secondary" onclick="toggleHelp()">Help</button>
+                </div>
+                <p style="font-size: 12px; color: #6c757d; margin-top: 8px;">
+                    💡 Tip: Press <kbd style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px; border: 1px solid #ddd;">Ctrl+Enter</kbd> to execute
+                </p>
+
+                <div id="resultContainer" class="result-container hidden"></div>
+            </div>
+
+            <!-- Tables List Section -->
+            <div class="section">
+                <div class="section-title">Tables</div>
+                <div id="tablesList" class="tables-list">
+                    <span class="info-message">Click "Refresh Tables" to load tables</span>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div id="helpSection" class="help-section" style="display: none;">
+                <h3>SQL Commands Reference</h3>
+                <ul>
+                    <li><strong>Create Table:</strong> <code>CREATE TABLE name (col1 TYPE1, col2 TYPE2, ...)</code></li>
+                    <li><strong>Insert Data:</strong> <code>INSERT INTO table VALUES (val1, val2, ...)</code></li>
+                    <li><strong>Select Data:</strong> <code>SELECT * FROM table WHERE col=value</code></li>
+                    <li><strong>Update Data:</strong> <code>UPDATE table SET col=value WHERE col=value</code></li>
+                    <li><strong>Delete Data:</strong> <code>DELETE FROM table WHERE col=value</code></li>
+                    <li><strong>Drop Table:</strong> <code>DROP TABLE table</code></li>
+                    <li><strong>Show Tables:</strong> <code>SHOW TABLES</code></li>
+                    <li><strong>Describe Table:</strong> <code>DESCRIBE table</code></li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>Supported Types:</strong> TEXT, INTEGER, FLOAT, BOOLEAN</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Execute SQL command
+        async function executeSQL() {
+            const sql = document.getElementById('sqlInput').value.trim();
+            const resultContainer = document.getElementById('resultContainer');
+            
+            if (!sql) {
+                showResult('error', 'Please enter a SQL command');
+                return;
+            }
+
+            // Show loading
+            resultContainer.classList.remove('hidden');
+            resultContainer.innerHTML = '<div class="loading"></div> Executing...';
+
+            try {
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ sql: sql })
+                });
+
+                const result = await response.json();
+                displayResult(result);
+                
+                // Refresh tables list if command modified tables
+                if (result.success && ['CREATE', 'DROP'].includes(sql.split(' ')[0].toUpperCase())) {
+                    loadTables();
+                }
+            } catch (error) {
+                showResult('error', 'Network error: ' + error.message);
+            }
+        }
+
+        // Display result
+        function displayResult(result) {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.classList.remove('hidden');
+
+            if (!result.success) {
+                showResult('error', result.error);
+                return;
+            }
+
+            // Handle special commands
+            if (result.special === 'show_tables') {
+                if (result.tables.length > 0) {
+                    const html = `
+                        <div class="success-message">Tables in database:</div>
+                        <div class="tables-list">
+                            ${result.tables.map(t => `<span class="table-badge">${t}</span>`).join('')}
+                        </div>
+                    `;
+                    resultContainer.innerHTML = html;
+                } else {
+                    showResult('info', 'No tables in database');
+                }
+                return;
+            }
+
+            if (result.special === 'describe') {
+                const schemaRows = Object.entries(result.schema)
+                    .map(([col, type]) => `<tr><td>${col}</td><td>${type}</td></tr>`)
+                    .join('');
+                
+                const html = `
+                    <div class="success-message">Schema for table: ${result.table}</div>
+                    <table class="schema-table">
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${schemaRows}
+                        </tbody>
+                    </table>
+                `;
+                resultContainer.innerHTML = html;
+                return;
+            }
+
+            // Handle SELECT queries
+            if (result.rows !== undefined) {
+                if (result.rows.length === 0) {
+                    showResult('info', 'Query returned no rows');
+                    return;
+                }
+
+                // Get columns
+                let columns = result.columns;
+                if (columns.includes('*') && result.rows.length > 0) {
+                    columns = Object.keys(result.rows[0]);
+                }
+
+                // Build table HTML
+                const headerRow = columns.map(col => `<th>${col}</th>`).join('');
+                const dataRows = result.rows.map(row => {
+                    const cells = columns.map(col => `<td>${row[col] !== null ? row[col] : 'NULL'}</td>`).join('');
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+
+                const html = `
+                    <div class="success-message">Query returned ${result.count} row(s)</div>
+                    <table>
+                        <thead>
+                            <tr>${headerRow}</tr>
+                        </thead>
+                        <tbody>
+                            ${dataRows}
+                        </tbody>
+                    </table>
+                `;
+                resultContainer.innerHTML = html;
+            } else {
+                // Other commands (INSERT, UPDATE, DELETE, CREATE, DROP)
+                showResult('success', result.message);
+            }
+        }
+
+        // Show simple message
+        function showResult(type, message) {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.classList.remove('hidden');
+            
+            const className = type === 'success' ? 'success-message' : 
+                            type === 'error' ? 'error-message' : 'info-message';
+            
+            resultContainer.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        // Load tables list
+        async function loadTables() {
+            const tablesList = document.getElementById('tablesList');
+            tablesList.innerHTML = '<div class="loading"></div> Loading...';
+
+            try {
+                const response = await fetch('/api/tables');
+                const result = await response.json();
+
+                if (result.success && result.tables.length > 0) {
+                    tablesList.innerHTML = result.tables
+                        .map(table => `<span class="table-badge" onclick="describeTable('${table}')">${table}</span>`)
+                        .join('');
+                } else {
+                    tablesList.innerHTML = '<span class="info-message">No tables in database</span>';
+                }
+            } catch (error) {
+                tablesList.innerHTML = '<span class="error-message">Error loading tables</span>';
+            }
+        }
+
+        // Describe table
+        function describeTable(tableName) {
+            document.getElementById('sqlInput').value = `DESCRIBE ${tableName}`;
+            executeSQL();
+        }
+
+        // Clear input
+        function clearInput() {
+            document.getElementById('sqlInput').value = '';
+            document.getElementById('resultContainer').classList.add('hidden');
+        }
+
+        // Toggle help
+        function toggleHelp() {
+            const helpSection = document.getElementById('helpSection');
+            helpSection.style.display = helpSection.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Load tables on page load
+        window.addEventListener('load', loadTables);
+
+        // Allow Ctrl+Enter to execute
+        document.getElementById('sqlInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                executeSQL();
+            }
+        });
+    </script>
+</body>
+</html>
