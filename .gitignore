@@ -45,5 +45,5 @@ instance/
 .webassets-cache
 
 # Database files (optional - can be tracked if needed for demos)
-# data/*.jsonl
-# metadata/*.json
+data/*.jsonl
+metadata/*.json

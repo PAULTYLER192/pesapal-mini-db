@@ -31,7 +31,7 @@ class SQLParser:
                 re.IGNORECASE | re.DOTALL
             ),
             'update': re.compile(
-                r'UPDATE\s+(\w+)\s+SET\s+(.*?)(?:\s+WHERE\s+(.*))?',
+                r'UPDATE\s+(\w+)\s+SET\s+(.+?)(?:\s+WHERE\s+(.+))?$',
                 re.IGNORECASE | re.DOTALL
             ),
             'delete': re.compile(
