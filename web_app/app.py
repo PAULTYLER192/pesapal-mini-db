@@ -4,6 +4,7 @@ Flask web application for Pesapal Mini Database.
 from flask import Flask, render_template, request, jsonify
 import sys
 import os
+import secrets
 
 # Add parent directory to path to import src module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -12,8 +13,9 @@ from src.db import Database
 from src.parser import QueryParser
 
 app = Flask(__name__)
-# Secret key should be set via environment variable in production
-app.secret_key = os.environ.get('SECRET_KEY', 'pesapal-mini-db-dev-key-change-me')
+# Secret key: use environment variable or generate a secure random key
+# In production, always set SECRET_KEY environment variable
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_urlsafe(32))
 
 # Global database instance (in-memory)
 db = Database("webapp_db")

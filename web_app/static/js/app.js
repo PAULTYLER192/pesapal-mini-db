@@ -138,19 +138,35 @@ function displayResults(data) {
     
     if (data.type === 'SELECT') {
         if (data.data.length === 0) {
-            resultsDiv.innerHTML = `
-                <div class="success-message">Query executed successfully</div>
-                <p class="result-info">No rows returned</p>
-            `;
+            resultsDiv.innerHTML = '';
+            
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = 'Query executed successfully';
+            
+            const infoP = document.createElement('p');
+            infoP.className = 'result-info';
+            infoP.textContent = 'No rows returned';
+            
+            resultsDiv.appendChild(successDiv);
+            resultsDiv.appendChild(infoP);
         } else {
             // Get columns from first row
             const columns = Object.keys(data.data[0]);
             
             // Create table structure safely
-            resultsDiv.innerHTML = `
-                <div class="success-message">Query executed successfully</div>
-                <p class="result-info">Returned ${data.count} row(s)</p>
-            `;
+            resultsDiv.innerHTML = '';
+            
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = 'Query executed successfully';
+            
+            const infoP = document.createElement('p');
+            infoP.className = 'result-info';
+            infoP.textContent = `Returned ${data.count} row(s)`;
+            
+            resultsDiv.appendChild(successDiv);
+            resultsDiv.appendChild(infoP);
             
             const table = document.createElement('table');
             table.className = 'data-table';
