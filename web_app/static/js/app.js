@@ -1,5 +1,12 @@
 // Pesapal Mini Database Web App JavaScript
 
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Load tables on page load
 document.addEventListener('DOMContentLoaded', function() {
     refreshTables();
@@ -24,22 +31,36 @@ async function refreshTables() {
                     tableItem.className = 'table-item';
                     tableItem.onclick = () => viewTable(table.name);
                     
-                    tableItem.innerHTML = `
-                        <div class="table-name">${table.name}</div>
-                        <div class="table-info">
-                            Columns: ${table.columns.join(', ')}<br>
-                            Rows: ${table.row_count}
-                        </div>
-                    `;
+                    const tableName = document.createElement('div');
+                    tableName.className = 'table-name';
+                    tableName.textContent = table.name;
                     
+                    const tableInfo = document.createElement('div');
+                    tableInfo.className = 'table-info';
+                    tableInfo.textContent = `Columns: ${table.columns.join(', ')}`;
+                    
+                    const rowInfo = document.createElement('br');
+                    tableInfo.appendChild(rowInfo);
+                    tableInfo.appendChild(document.createTextNode(`Rows: ${table.row_count}`));
+                    
+                    tableItem.appendChild(tableName);
+                    tableItem.appendChild(tableInfo);
                     tablesList.appendChild(tableItem);
                 });
             }
         } else {
-            tablesList.innerHTML = `<p class="error-message">Error: ${data.error}</p>`;
+            const errorMsg = document.createElement('p');
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = `Error: ${data.error}`;
+            tablesList.innerHTML = '';
+            tablesList.appendChild(errorMsg);
         }
     } catch (error) {
-        tablesList.innerHTML = `<p class="error-message">Error loading tables: ${error.message}</p>`;
+        const errorMsg = document.createElement('p');
+        errorMsg.className = 'error-message';
+        errorMsg.textContent = `Error loading tables: ${error.message}`;
+        tablesList.innerHTML = '';
+        tablesList.appendChild(errorMsg);
     }
 }
 
@@ -61,7 +82,11 @@ async function executeQuery() {
     const query = queryInput.value.trim();
     
     if (!query) {
-        resultsDiv.innerHTML = '<p class="error-message">Please enter a query</p>';
+        const errorMsg = document.createElement('p');
+        errorMsg.className = 'error-message';
+        errorMsg.textContent = 'Please enter a query';
+        resultsDiv.innerHTML = '';
+        resultsDiv.appendChild(errorMsg);
         return;
     }
     
@@ -86,10 +111,24 @@ async function executeQuery() {
                 refreshTables();
             }
         } else {
-            resultsDiv.innerHTML = `<div class="error-message"><strong>Error:</strong> ${data.error}</div>`;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            const strong = document.createElement('strong');
+            strong.textContent = 'Error: ';
+            errorDiv.appendChild(strong);
+            errorDiv.appendChild(document.createTextNode(data.error));
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(errorDiv);
         }
     } catch (error) {
-        resultsDiv.innerHTML = `<div class="error-message"><strong>Error:</strong> ${error.message}</div>`;
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        const strong = document.createElement('strong');
+        strong.textContent = 'Error: ';
+        errorDiv.appendChild(strong);
+        errorDiv.appendChild(document.createTextNode(error.message));
+        resultsDiv.innerHTML = '';
+        resultsDiv.appendChild(errorDiv);
     }
 }
 
@@ -107,37 +146,53 @@ function displayResults(data) {
             // Get columns from first row
             const columns = Object.keys(data.data[0]);
             
-            let html = `
+            // Create table structure safely
+            resultsDiv.innerHTML = `
                 <div class="success-message">Query executed successfully</div>
                 <p class="result-info">Returned ${data.count} row(s)</p>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            ${columns.map(col => `<th>${col}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
             `;
             
-            data.data.forEach(row => {
-                html += '<tr>';
-                columns.forEach(col => {
-                    const value = row[col];
-                    const displayValue = value === null ? 'NULL' : value;
-                    html += `<td>${displayValue}</td>`;
-                });
-                html += '</tr>';
-            });
+            const table = document.createElement('table');
+            table.className = 'data-table';
             
-            html += '</tbody></table>';
-            resultsDiv.innerHTML = html;
+            // Create header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            columns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create body
+            const tbody = document.createElement('tbody');
+            data.data.forEach(row => {
+                const tr = document.createElement('tr');
+                columns.forEach(col => {
+                    const td = document.createElement('td');
+                    const value = row[col];
+                    td.textContent = value === null ? 'NULL' : String(value);
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            
+            resultsDiv.appendChild(table);
         }
     } else {
-        resultsDiv.innerHTML = `
-            <div class="success-message">
-                <strong>Success!</strong> ${data.message}
-            </div>
-        `;
+        resultsDiv.innerHTML = '';
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        
+        const strong = document.createElement('strong');
+        strong.textContent = 'Success! ';
+        successDiv.appendChild(strong);
+        successDiv.appendChild(document.createTextNode(data.message));
+        
+        resultsDiv.appendChild(successDiv);
     }
 }
 

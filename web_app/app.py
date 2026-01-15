@@ -1,7 +1,7 @@
 """
 Flask web application for Pesapal Mini Database.
 """
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 import sys
 import os
 
@@ -12,7 +12,8 @@ from src.db import Database
 from src.parser import QueryParser
 
 app = Flask(__name__)
-app.secret_key = 'pesapal-mini-db-secret-key-change-in-production'
+# Secret key should be set via environment variable in production
+app.secret_key = os.environ.get('SECRET_KEY', 'pesapal-mini-db-dev-key-change-me')
 
 # Global database instance (in-memory)
 db = Database("webapp_db")
@@ -140,8 +141,8 @@ if __name__ == '__main__':
         db.insert('users', {'id': 1, 'name': 'John Doe', 'email': 'john@example.com', 'age': 30})
         db.insert('users', {'id': 2, 'name': 'Jane Smith', 'email': 'jane@example.com', 'age': 25})
         print("Sample 'users' table created with 2 rows")
-    except:
-        pass
+    except Exception as e:
+        print(f"Note: Sample data setup failed or already exists: {e}")
     
     print("Starting Pesapal Mini DB Web App...")
     print("Visit http://127.0.0.1:5000 in your browser")
