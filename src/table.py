@@ -51,8 +51,7 @@ class Table:
         table._save_metadata()
         
         # Create empty data file
-        with open(table.data_file, 'w') as f:
-            pass
+        open(table.data_file, 'w').close()
         
         return table
     

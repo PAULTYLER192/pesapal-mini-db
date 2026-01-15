@@ -200,7 +200,7 @@ class SQLParser:
         """
         where_clause = where_clause.strip()
         
-        # Try to find operator
+        # Try to find operator (ordered by length to match longer operators first)
         for op in ['!=', '>=', '<=', '=', '>', '<']:
             if op in where_clause:
                 parts = where_clause.split(op, 1)
