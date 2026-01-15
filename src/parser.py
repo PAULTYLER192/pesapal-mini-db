@@ -200,8 +200,8 @@ class QueryParser:
         if not where_str:
             return None
         
-        # WHERE col operator value
-        match = re.match(r'(\w+)\s*(=|!=|<|>|<=|>=)\s*(.+)', where_str.strip())
+        # WHERE col operator value (order matters: <= and >= before < and >)
+        match = re.match(r'(\w+)\s*(<=|>=|!=|=|<|>)\s*(.+)', where_str.strip())
         if not match:
             raise ValueError(f"Invalid WHERE clause: {where_str}")
         
