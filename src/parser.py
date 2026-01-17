@@ -1,16 +1,39 @@
 import re
 from typing import Any, Dict, List, Optional
 
-# Very small SQL parser supporting a subset of statements
-# Supported:
-# - CREATE TABLE name (col type, ...)
-# - DROP TABLE name
-# - INSERT INTO name (a, b) VALUES (1, 'x')
-# - SELECT a, b FROM name [WHERE x = 1 AND y = 'z'] [LIMIT n]
-# - UPDATE name SET a = 1, b = 'z' WHERE x = 2
-# - DELETE FROM name WHERE x = 3
-# - SHOW TABLES
-# - DESCRIBE name
+# SQL Parser - Converts SQL-like text commands into Abstract Syntax Tree (AST)
+# The parser uses regex and string splitting to identify keywords and extract parameters.
+# 
+# Supported statements:
+# ├── DDL (Data Definition Language)
+# │   ├── CREATE TABLE name (col type, ...) - Create table with schema
+# │   ├── DROP TABLE name - Delete table
+# │   └── DESCRIBE name - Show table schema
+# ├── DML (Data Manipulation Language)
+# │   ├── INSERT INTO name (cols) VALUES (vals) - Insert rows
+# │   ├── SELECT cols FROM name [WHERE ...] [LIMIT n] - Query rows
+# │   ├── UPDATE name SET col=val [WHERE ...] - Modify rows
+# │   └── DELETE FROM name [WHERE ...] - Remove rows
+# └── Utility
+#     └── SHOW TABLES - List all tables
+#
+# Parsing Strategy:
+# 1. Normalize: Strip semicolons, uppercase for keyword matching
+# 2. Keyword Detection: Match statement type with regex patterns
+# 3. Parameter Extraction: Use regex groups and string splitting to extract:
+#    - Table names (validated as identifiers)
+#    - Column names and types
+#    - Values (with type inference: int, float, bool, string, null)
+#    - Conditions (WHERE clauses with AND support)
+# 4. AST Generation: Return dictionary with "type" and extracted parameters
+#
+# Features:
+# ✓ Case-insensitive keyword matching
+# ✓ Type inference for values (int, float, bool, string, null)
+# ✓ Quote handling (single and double quotes)
+# ✓ Multiple WHERE conditions with AND
+# ✓ LIMIT clause support
+# ✓ Comprehensive error messages
 
 _ws = re.compile(r"\s+")
 
