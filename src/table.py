@@ -46,6 +46,45 @@ def _convert_type(value: Any, type_name: str) -> Any:
     return value
 
 
+def _validate_type(value: Any, type_name: str, column_name: str) -> Any:
+    """Validate and convert value to the specified type.
+    
+    Raises:
+        TypeError: If value cannot be converted to the expected type.
+    """
+    if value is None:
+        return None
+    
+    py_type = _TYPE_MAP.get(type_name.lower())
+    if py_type is None:
+        # Unknown types default to string
+        return str(value)
+    
+    if py_type is bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            v = value.strip().lower()
+            if v in ("true", "1", "yes", "y"): return True
+            if v in ("false", "0", "no", "n"): return False
+            raise TypeError(f"Column '{column_name}' expects type '{type_name}', cannot convert '{value}' to bool")
+        return bool(value)
+    
+    try:
+        if py_type is str:
+            return str(value)
+        if py_type is int:
+            if isinstance(value, bool):
+                return 1 if value else 0
+            return int(value)
+        if py_type is float:
+            return float(value)
+    except (ValueError, TypeError) as e:
+        raise TypeError(f"Column '{column_name}' expects type '{type_name}', cannot convert '{value}': {e}")
+    
+    return value
+
+
 class Table:
     """JSONL-backed heap table with a simple schema.
 
@@ -99,15 +138,28 @@ class Table:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     def insert(self, values: Dict[str, Any]) -> Dict[str, Any]:
-        # Type conversion based on schema
+        """Insert a row with data validation.
+        
+        Raises:
+            ValueError: If required columns are missing from input.
+            TypeError: If data types cannot be converted to schema types.
+        """
+        # Validate that all required columns are present
+        missing_columns = [col for col in self.columns.keys() if col not in values]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+        
+        # Validate and convert types based on schema
         converted: Dict[str, Any] = {}
         for col, type_name in self.columns.items():
             v = values.get(col)
-            converted[col] = _convert_type(v, type_name)
+            converted[col] = _validate_type(v, type_name, col)
+        
         # Include any extra columns provided (not in schema)
         for k, v in values.items():
             if k not in converted:
                 converted[k] = v
+        
         self._save_row(converted)
         return converted
 

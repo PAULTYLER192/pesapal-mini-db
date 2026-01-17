@@ -121,10 +121,102 @@ This document tracks all implementations, challenges faced, and solutions applie
 
 ---
 
+## Commit 3: Add Data Validation to Table.insert() (January 17, 2026)
+
+### What We Implemented
+- ✅ Data type validation before insertion
+- ✅ Required column validation
+- ✅ Comprehensive error messages for validation failures
+- ✅ Test suite for validation logic
+
+### User Story
+**As a Table**, I need to validate data types before insertion to ensure data integrity.
+
+### Acceptance Criteria Met
+1. **Type validation** ✓
+   - `insert(data)` method checks input dictionary against `self.schema`
+   - Validates each column's data type before saving
+
+2. **TypeError for invalid types** ✓
+   - If schema defines `age` as `int` and user provides `"twenty"`, raises `TypeError`
+   - Error message includes: column name, expected type, and conversion error details
+   - Example: `Column 'age' expects type 'int', cannot convert 'twenty': invalid literal for int() with base 10: 'twenty'`
+
+3. **ValueError for missing columns** ✓
+   - If required columns are missing from input, raises `ValueError`
+   - Error message lists all missing columns
+   - Example: `Missing required columns: age, active`
+
+### Challenges Faced
+**Challenge 1: Distinguishing Validation vs Silent Conversion**
+- **Problem**: Original `_convert_type()` silently kept original value on conversion failure, making debugging difficult
+- **Solution**: 
+  - Kept `_convert_type()` for backward compatibility (used in UPDATE operations)
+  - Created new `_validate_type()` function that raises `TypeError` on conversion failure
+  - INSERT now uses `_validate_type()` for strict validation
+  - UPDATE continues using `_convert_type()` for more lenient behavior
+
+**Challenge 2: Meaningful Error Messages**
+- **Problem**: Generic type errors don't help users understand what went wrong
+- **Solution**: 
+  - Error messages include column name, expected type, and actual value
+  - Propagate underlying conversion errors (e.g., "invalid literal for int()")
+  - Format: `Column '{name}' expects type '{type}', cannot convert '{value}': {details}`
+
+**Challenge 3: Handling Edge Cases**
+- **Problem**: What about null values, extra columns, or boolean string conversions?
+- **Solution**:
+  - Null values (`None`) are allowed for any type - bypass validation
+  - Extra columns (not in schema) are allowed and passed through
+  - Boolean strings accept flexible formats: "true", "1", "yes", "y" (and lowercase variants)
+  - Invalid boolean strings raise `TypeError` with clear message
+
+### Code Changes
+**File Modified**: `src/table.py`
+
+**Changes**:
+1. Added `_validate_type()` function (lines ~48-68)
+   - Strict type validation with error raising
+   - Detailed error messages with context
+   
+2. Updated `insert()` method (lines ~120-143)
+   - Added missing column check before type validation
+   - Uses `_validate_type()` instead of `_convert_type()`
+   - Added docstring documenting exceptions
+   
+3. Kept `_convert_type()` unchanged for UPDATE operations
+
+**File Created**: `test_validation.py`
+- Comprehensive test suite with 6 test cases
+- Tests valid insertions, type conversions, error conditions
+- Verifies both ValueError and TypeError are raised correctly
+
+### Test Results
+✅ **Test 1**: Valid data insertion - PASSED  
+✅ **Test 2**: Valid data with type conversion ("25" → 25) - PASSED  
+✅ **Test 3**: Invalid type (string "twenty" for int) - PASSED (correctly raises TypeError)  
+✅ **Test 4**: Missing required columns - PASSED (correctly raises ValueError)  
+✅ **Test 5**: Extra columns allowed - PASSED  
+✅ **Test 6**: Null values allowed - PASSED  
+
+### Technical Notes
+- Type validation happens **before** saving to JSONL, preventing corrupted data
+- Validation is strict on INSERT but could remain lenient on UPDATE if needed
+- Error messages follow pattern: `{what failed}` expects `{expected}`, got `{actual}`: `{reason}`
+- Boolean type handling is most flexible due to common string representations
+
+### Data Integrity Benefits
+1. **Prevention**: Invalid data never reaches storage layer
+2. **Early Detection**: Errors caught immediately at insertion time
+3. **Clear Feedback**: Detailed error messages help users correct input
+4. **Type Safety**: Schema enforcement ensures consistent data types across rows
+
+---
+
 ## Next Steps
+- [x] Improve error handling and validation
 - [ ] Add indexing for faster queries
 - [ ] Implement JOIN operations
 - [ ] Add transaction support
-- [ ] Improve error handling and validation
-- [ ] Add unit tests
+- [ ] Add unit tests for other operations (UPDATE, DELETE, SELECT)
 - [ ] Performance optimization for large datasets
