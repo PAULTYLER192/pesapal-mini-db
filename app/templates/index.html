@@ -3,69 +3,270 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mini DB</title>
+  <title>Mini DB - User Registration</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
-    h1 { margin-bottom: 0.5rem; }
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-    input, textarea { width: 100%; padding: 0.5rem; margin: 0.25rem 0; }
-    button { padding: 0.5rem 1rem; }
-    .tables { display: flex; gap: 1rem; flex-wrap: wrap; }
-    .badge { display: inline-block; background: #eef; color: #225; padding: 0.25rem 0.5rem; border-radius: 6px; margin: 0.25rem; }
-    .flash { background: #ffe8e8; color: #900; padding: 0.5rem; border: 1px solid #f5c2c2; border-radius: 6px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color: white; margin-bottom: 2rem; text-align: center; }
+    h2 { color: #333; margin: 1rem 0 0.5rem; }
+    
+    .card { 
+      background: white; 
+      border-radius: 12px; 
+      padding: 2rem; 
+      margin-bottom: 2rem; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    label { 
+      display: block; 
+      margin-bottom: 0.5rem; 
+      color: #333;
+      font-weight: 500;
+    }
+    
+    input, textarea { 
+      width: 100%; 
+      padding: 0.75rem; 
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button { 
+      padding: 0.75rem 1.5rem; 
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #764ba2;
+    }
+    
+    .flash {
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    
+    .flash.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .flash.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .tables { 
+      display: flex; 
+      gap: 0.5rem; 
+      flex-wrap: wrap; 
+    }
+    
+    .badge { 
+      display: inline-block; 
+      background: #e7f0ff; 
+      color: #225; 
+      padding: 0.5rem 1rem; 
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .user-list {
+      margin-top: 1rem;
+    }
+    
+    .user-card {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.25rem;
+    }
+    
+    .user-email {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .user-id {
+      background: #667eea;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .empty {
+      color: #999;
+      font-style: italic;
+      padding: 1rem;
+      text-align: center;
+    }
+    
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Mini DB</h1>
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <div class="flash">
-        {% for m in messages %}
-          <div>{{ m }}</div>
+  <div class="container">
+    <h1>📊 Mini DB - User Registration</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category or 'info' }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="two-column">
+      <!-- User Registration Form -->
+      <div class="card">
+        <h2>✍️ Register New User</h2>
+        <form method="post" action="/register">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input id="name" name="name" placeholder="John Doe" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input id="email" name="email" type="email" placeholder="john@example.com" required />
+          </div>
+          <button type="submit">Register User</button>
+        </form>
+      </div>
+
+      <!-- Registered Users List -->
+      <div class="card">
+        <h2>👥 Registered Users</h2>
+        <div class="user-list">
+          {% if registered_users %}
+            {% for user in registered_users %}
+              <div class="user-card">
+                <div class="user-info">
+                  <div class="user-name">{{ user.name }}</div>
+                  <div class="user-email">{{ user.email }}</div>
+                </div>
+                <div class="user-id">#{{ user.id }}</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty">No users registered yet. Register one above!</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Database Info -->
+    <div class="card">
+      <h2>📋 Database Tables</h2>
+      <div class="tables">
+        {% for t in tables %}
+          <span class="badge">{{ t }}</span>
+        {% else %}
+          <em>No tables created</em>
         {% endfor %}
       </div>
-    {% endif %}
-  {% endwith %}
-
-  <div class="card">
-    <h2>Create Table</h2>
-    <form method="post" action="/create_table">
-      <label>Table Name</label>
-      <input name="table_name" placeholder="products" />
-      <label>Columns (name:type, comma-separated)</label>
-      <input name="columns" placeholder="id:int, name:str, price:float" />
-      <button type="submit">Create</button>
-    </form>
-  </div>
-
-  <div class="card">
-    <h2>Tables</h2>
-    <div class="tables">
-      {% for t in tables %}
-        <span class="badge">{{ t }}</span>
-      {% else %}
-        <em>No tables yet</em>
-      {% endfor %}
     </div>
-  </div>
 
-  <div class="card">
-    <h2>Insert Row</h2>
-    <form method="post" action="/insert">
-      <label>Table</label>
-      <input name="table" placeholder="products" />
-      <label>JSON Data</label>
-      <textarea name="json_data" rows="4" placeholder='{"id":1,"name":"Pen","price":1.99}'></textarea>
-      <button type="submit">Insert</button>
-    </form>
-  </div>
+    <!-- Advanced Features (Collapsible) -->
+    <div class="card">
+      <details>
+        <summary style="cursor: pointer; font-weight: 600; color: #333;">Advanced Features ▼</summary>
+        
+        <div style="margin-top: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;">Create Custom Table</h3>
+          <form method="post" action="/create_table">
+            <div class="form-group">
+              <label>Table Name</label>
+              <input name="table_name" placeholder="products" />
+            </div>
+            <div class="form-group">
+              <label>Columns (name:type, comma-separated)</label>
+              <input name="columns" placeholder="id:int, name:str, price:float" />
+            </div>
+            <button type="submit">Create Table</button>
+          </form>
+        </div>
 
-  <div class="card">
-    <h2>Run SQL</h2>
-    <form method="post" action="/query">
-      <textarea name="sql" rows="4" placeholder="SELECT * FROM products LIMIT 10"></textarea>
-      <button type="submit">Run</button>
-    </form>
+        <div style="margin-top: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;">Insert Row (JSON)</h3>
+          <form method="post" action="/insert">
+            <div class="form-group">
+              <label>Table Name</label>
+              <input name="table" placeholder="products" />
+            </div>
+            <div class="form-group">
+              <label>JSON Data</label>
+              <textarea name="json_data" rows="4" placeholder='{"id":1,"name":"Pen","price":1.99}'></textarea>
+            </div>
+            <button type="submit">Insert</button>
+          </form>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;">Run SQL Query</h3>
+          <form method="post" action="/query">
+            <div class="form-group">
+              <label>SQL Command</label>
+              <textarea name="sql" rows="4" placeholder="SELECT * FROM users LIMIT 10"></textarea>
+            </div>
+            <button type="submit">Execute</button>
+          </form>
+        </div>
+      </details>
+    </div>
   </div>
 </body>
 </html>

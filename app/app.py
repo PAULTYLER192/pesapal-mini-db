@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
 from database import Database  # type: ignore
+from table import DuplicateKeyError  # type: ignore
 
 # Load environment variables
 load_dotenv()
@@ -14,10 +15,65 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
 db = Database(base_dir=os.path.dirname(os.path.dirname(__file__)))
 
+# Ensure 'users' table exists with primary key
+def _ensure_users_table():
+    """Create users table if it doesn't exist."""
+    try:
+        db.get_table("users")
+    except FileNotFoundError:
+        db.create_table(
+            name="users",
+            columns=[
+                {"name": "id", "type": "int"},
+                {"name": "name", "type": "str"},
+                {"name": "email", "type": "str"}
+            ],
+            primary_key="id"
+        )
+
 @app.get("/")
 def index():
+    """Display user registration form and list of registered users."""
+    _ensure_users_table()
+    
+    # Fetch all registered users
+    users_table = db.get_table("users")
+    registered_users = users_table.select()
+    
     tables = db.list_tables()
-    return render_template("index.html", tables=tables)
+    return render_template("index.html", tables=tables, registered_users=registered_users)
+
+@app.post("/register")
+def register():
+    """Handle user registration form submission."""
+    _ensure_users_table()
+    
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
+    
+    if not name or not email:
+        flash("Name and email are required", "error")
+        return redirect(url_for("index"))
+    
+    try:
+        users_table = db.get_table("users")
+        
+        # Generate a simple ID (count + 1)
+        user_id = users_table.count() + 1
+        
+        # Insert the new user
+        user = users_table.insert({
+            "id": user_id,
+            "name": name,
+            "email": email
+        })
+        flash(f"Successfully registered: {name} ({email})", "success")
+    except DuplicateKeyError:
+        flash(f"User with ID already exists", "error")
+    except Exception as e:
+        flash(f"Error registering user: {e}", "error")
+    
+    return redirect(url_for("index"))
 
 @app.post("/create_table")
 def create_table():
