@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini DB</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
+    h1 { margin-bottom: 0.5rem; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    input, textarea { width: 100%; padding: 0.5rem; margin: 0.25rem 0; }
+    button { padding: 0.5rem 1rem; }
+    .tables { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .badge { display: inline-block; background: #eef; color: #225; padding: 0.25rem 0.5rem; border-radius: 6px; margin: 0.25rem; }
+    .flash { background: #ffe8e8; color: #900; padding: 0.5rem; border: 1px solid #f5c2c2; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Mini DB</h1>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash">
+        {% for m in messages %}
+          <div>{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="card">
+    <h2>Create Table</h2>
+    <form method="post" action="/create_table">
+      <label>Table Name</label>
+      <input name="table_name" placeholder="products" />
+      <label>Columns (name:type, comma-separated)</label>
+      <input name="columns" placeholder="id:int, name:str, price:float" />
+      <button type="submit">Create</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Tables</h2>
+    <div class="tables">
+      {% for t in tables %}
+        <span class="badge">{{ t }}</span>
+      {% else %}
+        <em>No tables yet</em>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Insert Row</h2>
+    <form method="post" action="/insert">
+      <label>Table</label>
+      <input name="table" placeholder="products" />
+      <label>JSON Data</label>
+      <textarea name="json_data" rows="4" placeholder='{"id":1,"name":"Pen","price":1.99}'></textarea>
+      <button type="submit">Insert</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Run SQL</h2>
+    <form method="post" action="/query">
+      <textarea name="sql" rows="4" placeholder="SELECT * FROM products LIMIT 10"></textarea>
+      <button type="submit">Run</button>
+    </form>
+  </div>
+</body>
+</html>
