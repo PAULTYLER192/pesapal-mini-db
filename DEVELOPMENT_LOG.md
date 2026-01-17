@@ -351,10 +351,173 @@ This document tracks all implementations, challenges faced, and solutions applie
 
 ---
 
+## Commit 5: Implement Database Table Manager with Auto-Loading (January 17, 2026)
+
+### What We Implemented
+- ✅ Database class with table management and caching
+- ✅ Auto-loading of existing tables on startup
+- ✅ Schema persistence in metadata/{name}.json
+- ✅ Table caching for efficient repeated access
+- ✅ Primary key support integrated with table creation
+
+### User Story
+**As a Database**, I need to create and retrieve tables to manage multiple datasets efficiently.
+
+### Acceptance Criteria Met
+1. **create_table(name, schema)** ✓
+   - Saves schema to metadata/{name}.json
+   - Supports optional primary_key parameter
+   - Creates Table object with primary key indexing
+   - Raises FileExistsError if table already exists
+
+2. **get_table(name)** ✓
+   - Loads schema from metadata/{name}.json
+   - Returns Table object with proper primary key support
+   - Caches table instance for repeated access
+   - Raises FileNotFoundError if table doesn't exist
+
+3. **Auto-load on startup** ✓
+   - `_load_existing_tables()` called in `__init__`
+   - Scans metadata/ folder for .json schema files
+   - Rebuilds indexes for tables with primary keys
+   - Handles load errors gracefully without failing
+
+### Key Features
+1. **Table Caching**
+   - In-memory cache: `self._tables: Dict[str, Table]`
+   - Repeated calls to `get_table()` return same instance
+   - Reduces repeated disk I/O for metadata/data loading
+
+2. **Schema Management**
+   - Schema persisted in JSON format for durability
+   - Primary key stored in schema for auto-configuration
+   - Schema metadata accessible via `describe()` method
+
+3. **Initialization Flow**
+   - Create data/ and metadata/ directories
+   - Initialize empty table cache
+   - Scan and load all existing tables
+   - Build indexes for tables with primary keys
+
+4. **Cache Invalidation**
+   - `drop_table()` removes table from cache
+   - `create_table()` immediately caches new table
+   - Cache always reflects current state of disk
+
+### Challenges Faced
+**Challenge 1: Initialization Order - Attribute Definition**
+- **Problem**: `_load_existing_tables()` was called before `self._tables` was initialized
+- **Solution**: 
+  - Initialize `self._tables: Dict[str, Table] = {}` in `__init__` first
+  - Then call `_load_existing_tables()` which populates the cache
+  - Ensures all attributes exist before methods use them
+
+**Challenge 2: Primary Key Persistence**
+- **Problem**: Primary key information was lost when reloading table from schema file
+- **Solution**:
+  - Store `primary_key` field directly in schema JSON
+  - Read it back with `schema.get("primary_key")`
+  - Pass to Table constructor to rebuild indexes automatically
+
+**Challenge 3: Table Retrieval Consistency**
+- **Problem**: Loading same table multiple times could create different instances
+- **Solution**:
+  - Check cache first with `if name in self._tables`
+  - Return cached instance immediately (O(1) access)
+  - Only load from disk if not cached
+  - Add to cache after loading
+
+**Challenge 4: Load Error Handling**
+- **Problem**: One corrupted schema file could break entire database initialization
+- **Solution**:
+  - Try-except around each individual table load
+  - Print warning but continue loading other tables
+  - Database remains functional even if some tables fail to load
+
+### Code Changes
+**File Modified**: `src/database.py`
+
+**Changes**:
+1. Updated class docstring to explain caching and auto-loading
+
+2. Updated `__init__()` method (lines ~17-28)
+   - Initialize `self._tables: Dict[str, Table] = {}` cache
+   - Create metadata/ directory
+   - Call `_load_existing_tables()` at end
+
+3. Added `_load_existing_tables()` method (lines ~30-50)
+   - Scans metadata/ folder for .json files
+   - Loads each schema and creates Table object
+   - Populates cache with loaded tables
+   - Handles and logs errors gracefully
+
+4. Enhanced `create_table()` method (lines ~57-82)
+   - Added `primary_key: Optional[str] = None` parameter
+   - Saves primary_key in schema JSON
+   - Creates and caches Table object immediately
+
+5. Enhanced `get_table()` method (lines ~84-113)
+   - Checks cache first for instant retrieval
+   - Loads from disk only if not cached
+   - Properly extracts and passes primary_key to Table
+   - Adds loaded table to cache
+
+6. Enhanced `drop_table()` method (lines ~115-128)
+   - Removes table from in-memory cache
+   - Deletes schema and data files
+
+**File Created**: `test_database.py`
+- 10 comprehensive test cases
+- Tests table creation, loading, caching, auto-loading
+- Tests primary key integration
+- Tests error handling
+
+### Test Results
+✅ **Test 1**: Database initialization - PASSED  
+✅ **Test 2**: create_table() saves schema - PASSED (file created with PK)  
+✅ **Test 3**: get_table() returns Table object - PASSED (with PK loaded)  
+✅ **Test 4**: Table caching - PASSED (same instance returned)  
+✅ **Test 5**: list_tables() - PASSED (multiple tables listed)  
+✅ **Test 6**: Insert and retrieve - PASSED (data persisted)  
+✅ **Test 7**: Duplicate PK detection - PASSED (DuplicateKeyError raised)  
+✅ **Test 8**: drop_table() - PASSED (files and cache cleared)  
+✅ **Test 9**: Auto-load existing tables - PASSED (index rebuilt, data preserved)  
+✅ **Test 10**: Optional primary key - PASSED (tables without PK work)
+
+### Architecture Benefits
+1. **Multi-Table Support**: Database manages multiple independent tables
+2. **Performance**: Caching avoids repeated disk I/O
+3. **Durability**: Schemas saved to disk survive application restart
+4. **Recovery**: Auto-loading rebuilds indexes and restores state
+5. **Flexibility**: Optional primary keys support different use cases
+
+### Persistence Model
+```
+Database/
+├── data/
+│   ├── table1.jsonl  (row data, one JSON per line)
+│   ├── table2.jsonl
+│   └── ...
+└── metadata/
+    ├── table1.json   (schema with optional primary_key field)
+    ├── table2.json
+    └── ...
+```
+
+### Data Integrity
+1. **Atomicity**: Schema created first, data file auto-created with Table
+2. **Consistency**: Auto-loading rebuilds indexes matching persistent data
+3. **Isolation**: Each table has independent file and index
+4. **Durability**: All state persisted in JSON and JSONL files
+
+---
+
 ## Next Steps
 - [x] Improve error handling and validation
-- [ ] Add indexing for faster queries
-- [ ] Implement JOIN operations
+- [x] Implement Primary Key indexing with O(1) lookups
+- [x] Create database manager for multiple tables
+- [ ] Add secondary indexes for non-primary key columns
+- [ ] Implement JOIN operations between tables
 - [ ] Add transaction support
-- [ ] Add unit tests for other operations (UPDATE, DELETE, SELECT)
+- [ ] Add comprehensive integration tests
 - [ ] Performance optimization for large datasets
