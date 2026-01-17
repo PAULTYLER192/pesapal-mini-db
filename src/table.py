@@ -57,8 +57,11 @@ class Table:
         self.name = name
         self.schema = schema
         self.data_path = os.path.join(data_dir, f"{name}.jsonl")
-        # Ensure file exists
+        
+        # Ensure data directory exists
         os.makedirs(os.path.dirname(self.data_path), exist_ok=True)
+        
+        # Create file automatically if it doesn't exist
         if not os.path.exists(self.data_path):
             with open(self.data_path, "w", encoding="utf-8") as f:
                 pass
@@ -66,10 +69,12 @@ class Table:
         # Build column map for quick type checks
         self.columns = {c["name"]: c.get("type", "str") for c in schema.get("columns", [])}
 
-    def _read_all(self) -> List[Dict[str, Any]]:
+    def _load_rows(self) -> List[Dict[str, Any]]:
+        """Read line-by-line from data/{name}.jsonl."""
         rows: List[Dict[str, Any]] = []
         if not os.path.exists(self.data_path):
             return rows
+        
         with open(self.data_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -82,7 +87,13 @@ class Table:
                     continue
         return rows
 
+    def _save_row(self, row_dict: Dict[str, Any]) -> None:
+        """Append a JSON string to data/{name}.jsonl."""
+        with open(self.data_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row_dict, ensure_ascii=False) + "\n")
+
     def _write_all(self, rows: Iterable[Dict[str, Any]]) -> None:
+        """Rewrite entire file with given rows."""
         with open(self.data_path, "w", encoding="utf-8") as f:
             for row in rows:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -97,8 +108,7 @@ class Table:
         for k, v in values.items():
             if k not in converted:
                 converted[k] = v
-        with open(self.data_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(converted, ensure_ascii=False) + "\n")
+        self._save_row(converted)
         return converted
 
     def select(
@@ -107,7 +117,7 @@ class Table:
         columns: Optional[List[str]] = None,
         limit: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
-        rows = self._read_all()
+        rows = self._load_rows()
         res: List[Dict[str, Any]] = []
         for row in rows:
             if where:
@@ -128,7 +138,7 @@ class Table:
         return res
 
     def update(self, set_values: Dict[str, Any], where: Optional[Dict[str, Any]] = None) -> int:
-        rows = self._read_all()
+        rows = self._load_rows()
         updated = 0
         for row in rows:
             if where:
@@ -147,7 +157,7 @@ class Table:
         return updated
 
     def delete(self, where: Optional[Dict[str, Any]] = None) -> int:
-        rows = self._read_all()
+        rows = self._load_rows()
         kept: List[Dict[str, Any]] = []
         deleted = 0
         for row in rows:
@@ -165,4 +175,4 @@ class Table:
         return deleted
 
     def count(self) -> int:
-        return sum(1 for _ in self._read_all())
+        return sum(1 for _ in self._load_rows())
